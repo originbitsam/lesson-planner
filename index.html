@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson Planner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c5282;
+            --primary-color-light: #4c72a2;
+            --secondary-color: #edf2f7;
+            --border-color: #cbd5e0;
+            --text-color: #2d3748;
+            --header-text-color: #ffffff;
+            --danger-color: #c53030;
+            --danger-color-light: #e53e3e;
+            --font-family: 'Inter', sans-serif;
+            --font-size-base: 16px;
+            --font-size-lg: 18px;
+            --font-size-xl: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: #f7fafc;
+            color: var(--text-color);
+            font-size: var(--font-size-base);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: var(--header-text-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .card-header.collapsed + .card-content {
+            display: none;
+        }
+
+        .card-header h2 {
+            font-size: var(--font-size-lg);
+            color: var(--primary-color);
+            margin: 0;
+            border: none;
+            padding: 0;
+        }
+        
+        .toggle-icon {
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .card-header.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .card-content {
+            padding: 25px;
+            border-top: 1px solid var(--secondary-color);
+        }
+        
+        .card h3 {
+            font-size: 1.1rem;
+            color: var(--primary-color-light);
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .label-with-help {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-icon {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: var(--font-family);
+            font-size: var(--font-size-base);
+            transition: border-color 0.2s;
+            background-color: #fff;
+        }
+        
+        input[type="number"] {
+            width: 80px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.2);
+        }
+        
+        .richtext-editor {
+            background-color: #fff;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .ql-toolbar.ql-snow {
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .ql-container.ql-snow {
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+            min-height: 150px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: var(--header-text-color);
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            transition: background-color 0.2s;
+            text-align: center;
+            display: inline-block;
+            line-height: 1.5;
+        }
+
+        .btn:hover { background-color: var(--primary-color-light); }
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #5a6268; }
+        .btn-success { background-color: #28a745; }
+        .btn-success:hover { background-color: #218838; }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-danger:hover { background-color: var(--danger-color-light); }
+
+        input[type="file"] { display: none; }
+
+        .lesson-segment {
+            border: 1px solid var(--secondary-color);
+            border-radius: 8px;
+            margin-top: 20px;
+            background-color: #fdfdfd;
+            overflow: hidden;
+        }
+        
+        .lesson-segment.dragging { opacity: 0.5; background: #e2e8f0; }
+
+        .lesson-segment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: var(--secondary-color);
+        }
+        
+        .segment-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            overflow: hidden;
+        }
+        
+        .drag-handle { cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
+        
+        .segment-summary {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .segment-controls { display: flex; gap: 10px; }
+        
+        .segment-content {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .lesson-segment-header.collapsed + .segment-content { display: none; }
+
+        .total-time {
+            font-weight: bold;
+            font-size: var(--font-size-lg);
+            margin-top: 20px;
+            text-align: right;
+            color: var(--primary-color);
+        }
+        
+        .preview-content {
+            padding-left: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .preview-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-header h2 { margin: 0; color: var(--primary-color); }
+
+        .close-button { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-button:hover, .close-button:focus { color: black; }
+        .modal-body ul { list-style-position: inside; padding-left: 10px; }
+        .modal-body li { margin-bottom: 10px; }
+        .modal-body h4 { color: var(--primary-color-light); margin-top: 15px; }
+
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .card-header h2 {
+                font-size: var(--font-size-base);
+            }
+            .card-content {
+                padding: 15px;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            .segment-controls {
+                flex-direction: column;
+                gap: 5px;
+            }
+            .segment-controls .btn {
+                width: auto;
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+        
+        @media print {
+            html, body {
+                background-color: #fff !important;
+            }
+            body > *:not(#print-area) {
+                display: none !important;
+            }
+            #print-area, #print-area * {
+                visibility: visible !important;
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 1cm;
+                border: none;
+                background-color: #fff !important;
+            }
+            #print-area h2 {
+                border-bottom: 2px solid #edf2f7;
+                padding-bottom: 10px;
+                margin-top: 30px;
+                page-break-before: auto;
+                page-break-inside: avoid;
+            }
+            #print-area h3, #print-area h4 {
+                margin-top: 20px;
+                page-break-after: avoid;
+            }
+            #print-area .preview-content {
+                 padding-left: 20px;
+                 margin-bottom: 15px;
+                 white-space: pre-wrap;
+                 word-wrap: break-word;
+            }
+            #print-area .preview-content img {
+                max-width: 100%;
+                height: auto;
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Lesson Planner</h1>
+        </header>
+        
+        <div class="button-group">
+             <button class="btn btn-success" id="saveFullPlan">Save Full Plan</button>
+             <label class="btn btn-success">
+                Load Full Plan
+                <input type="file" id="loadFullPlanInput" accept=".xlsx, .xls">
+            </label>
+            <button class="btn btn-secondary" id="collapseAllParts">Collapse All Parts</button>
+            <button class="btn btn-secondary" id="expandAllParts">Expand All Parts</button>
+            <button class="btn" id="showChecklistBtn">Teaching Essentials Checklist</button>
+        </div>
+
+        <div class="card" id="basic-info-card">
+            <div class="card-header">
+                <h2>Basic Information</h2>
+                <span class="toggle-icon">▾</span>
+            </div>
+            <div class="card-content">
+                <div class="form-group"><label for="teacherName">Teacher Name</label><input type="text" id="teacherName" placeholder="e.g., Mr. Chan"></div>
+                <div class="form-group"><label for="courseName">Course</label><input type="text" id="courseName" placeholder="e.g., Form 4 English"></div>
+                <div class="form-group"><label for="unitName">Unit</label><input type="text" id="unitName" placeholder="e.g., Unit 3: Narrative Writing"></div>
+                <div class="form-group"><label for="lessonName">Lesson</label><input type="text" id="lessonName" placeholder="e.g., Introduction to Plot"></div>
+                <div class="form-group"><label for="lessonDate">Date</label><input type="date" id="lessonDate"></div>
+            </div>
+        </div>
+
+        <div class="card" id="part1-card">
+            <div class="card-header">
+                <h2>Part 1: Begin with the End in Mind (Unit Plan)</h2>
+                <span class="toggle-icon">▾</span>
+            </div>
+            <div class="card-content">
+                 <div class="button-group">
+                    <button class="btn" id="saveUnitPlan">Save Unit Plan Only</button>
+                    <label class="btn">Load Unit Plan<input type="file" id="loadUnitPlanInput" accept=".xlsx, .xls"></label>
+                </div>
+                <div class="form-group"><div class="label-with-help"><label for="standard">Standard</label><span class="help-icon" data-help="standard">?</span></div><div id="standard" class="richtext-editor"></div></div>
+                <div class="form-group"><div class="label-with-help"><label for="objective">Objective</label><span class="help-icon" data-help="objective">?</span></div><div id="objective" class="richtext-editor"></div></div>
+                <div class="form-group"><div class="label-with-help"><label for="focusQuestionUnit">Focus Question</label><span class="help-icon" data-help="focusQuestionUnit">?</span></div><div id="focusQuestionUnit" class="richtext-editor"></div></div>
+                <div class="form-group"><div class="label-with-help"><label for="summativeAssessment">Summative Assessment</label><span class="help-icon" data-help="summativeAssessment">?</span></div><div id="summativeAssessment" class="richtext-editor"></div></div>
+            </div>
+        </div>
+
+        <div class="card" id="part2-card">
+            <div class="card-header">
+                <h2>Part 2: The Main Body of the Lesson</h2>
+                <span class="toggle-icon">▾</span>
+            </div>
+            <div class="card-content">
+                <div class="button-group">
+                    <button class="btn" id="saveLessonPlan">Save Lesson Plan Only</button>
+                    <label class="btn">Load Lesson Plan<input type="file" id="loadLessonPlanInput" accept=".xlsx, .xls"></label>
+                </div>
+                <div class="form-group"><div class="label-with-help"><label for="bellRinger">Bell Ringer (3-5 mins)</label><span class="help-icon" data-help="bellRinger">?</span></div><div id="bellRinger" class="richtext-editor"></div></div>
+                <div class="form-group"><div class="label-with-help"><label for="hook">Hook</label><span class="help-icon" data-help="hook">?</span></div><div id="hook" class="richtext-editor"></div></div>
+                <div class="form-group"><div class="label-with-help"><label for="focusQuestionLesson">Focus Question</label><span class="help-icon" data-help="focusQuestionLesson">?</span></div><div id="focusQuestionLesson" class="richtext-editor"></div></div>
+                
+                <h3>Lesson Body Segments</h3>
+                <div class="button-group">
+                    <button class="btn btn-success" id="add-segment-btn">Add Lesson Segment</button>
+                    <button class="btn btn-secondary" id="collapseAllSegments">Collapse All</button>
+                    <button class="btn btn-secondary" id="expandAllSegments">Expand All</button>
+                </div>
+                <div id="lesson-segments-container"></div>
+                <div id="total-time-container" class="total-time">Total Lesson Body Time: 0 mins</div>
+            </div>
+        </div>
+
+        <div class="card" id="part3-card">
+            <div class="card-header">
+                <h2>Part 3: Wrap Up</h2>
+                <span class="toggle-icon">▾</span>
+            </div>
+            <div class="card-content">
+                <div class="form-group"><div class="label-with-help"><label for="potentialProblems">Potential Problems</label><span class="help-icon" data-help="potentialProblems">?</span></div><div id="potentialProblems" class="richtext-editor"></div></div>
+                <div class="form-group"><div class="label-with-help"><label for="closure">Closure</label><span class="help-icon" data-help="closure">?</span></div><div id="closure" class="richtext-editor"></div></div>
+                <h3>Reflective Notes</h3>
+                <div class="form-group"><div class="label-with-help"><label for="reflectiveNotesTeacher">Reflections</label><span class="help-icon" data-help="reflectiveNotesTeacher">?</span></div><div id="reflectiveNotesTeacher" class="richtext-editor"></div></div>
+                <div class="form-group"><label for="followUpActions">Follow-up Actions / Revisions</label><div id="followUpActions" class="richtext-editor"></div></div>
+            </div>
+        </div>
+
+        <div class="card" id="preview-card">
+             <div class="card-header">
+                <h2>Lesson Plan Preview & Download</h2>
+                <span class="toggle-icon">▾</span>
+            </div>
+            <div class="card-content">
+                <div class="button-group">
+                    <button class="btn btn-success" id="previewPlan">Generate Preview</button>
+                    <button class="btn btn-secondary" id="downloadPDF">Download as PDF</button>
+                </div>
+                <div id="lesson-plan-preview"><p>Click "Generate Preview" to see your lesson plan here.</p></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="modalTitle"></h2><span class="close-button">&times;</span></div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+    
+    <div id="checklistModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Teaching Essentials Checklist</h2>
+                <span class="close-button">&times;</span>
+            </div>
+            <div class="modal-body">
+                <h4>1. Foundational Brain Concepts</h4>
+                <ul>
+                    <li><strong>Working Memory:</strong> Have I considered the cognitive load? Are instructions chunked? Am I supporting "hikers" (e.g., with visual aids, slower pace) and challenging "race cars" (e.g., with complex problems)?</li>
+                    <li><strong>Two Learning Pathways:</strong> Does the lesson engage both the fast, conscious <strong>declarative system</strong> (through explanations, "I do") and the slower, habit-forming <strong>procedural system</strong> (through practice, "We do," "You do")?</li>
+                    <li><strong>Memory Consolidation:</strong> Are there planned <strong>"brain breaks"</strong> or transitions to allow students' brains to consolidate new information?</li>
+                </ul>
+                <h4>2. Instructional Strategies</h4>
+                <ul>
+                    <li><strong>Retrieval Practice:</strong> Is the lesson built around getting information <em>out</em> of students' heads, not just putting it in? (e.g., low-stakes quizzes, recall, think-pair-share).</li>
+                    <li><strong>Desirable Difficulties:</strong> Am I using effective practice methods like <strong>interleaving</strong> (mixing related concepts) and <strong>spaced repetition</strong> (revisiting topics over time) instead of just massed practice?</li>
+                    <li><strong>Direct Instruction:</strong> For new, complex (biologically secondary) material, am I using an explicit "I do, we do, you do" model to build a solid foundation?</li>
+                    <li><strong>Schemas:</strong> Does the lesson connect to and build upon students' prior knowledge to help them form robust mental frameworks (schemas)?</li>
+                </ul>
+                <h4>3. Classroom Environment & Motivation</h4>
+                <ul>
+                    <li><strong>Procedures & Habits:</strong> Are classroom routines (e.g., bell ringer, transitions) explicitly taught and consistently practiced until they become automatic habits?</li>
+                    <li><strong>Tackling Procrastination:</strong> For larger assignments, have I broken them down into smaller, manageable tasks with intermediate deadlines? Have I taught students tools like the Pomodoro Technique?</li>
+                    <li><strong>Motivation & Engagement:</strong> Does the lesson have a <strong>"hook"</strong> to spark curiosity? Do I use <strong>unexpected rewards</strong> (like specific, genuine praise) to boost dopamine and reinforce learning?</li>
+                    <li><strong>Collaborative Learning:</strong> If using group work, is it structured with positive interdependence, individual accountability, and clear roles to build community and social skills?</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div id="print-area"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let quillInstances = {};
+            const quillToolbarOptions = [
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                ['link', 'image'],
+                ['clean']
+            ];
+
+            const initializeQuill = (selector) => {
+                const editor = document.querySelector(selector);
+                if (editor && !editor.classList.contains('ql-container')) {
+                    const quill = new Quill(editor, {
+                        modules: { toolbar: quillToolbarOptions },
+                        theme: 'snow'
+                    });
+                    quillInstances[selector.substring(1)] = quill;
+                }
+            };
+            
+            document.querySelectorAll('.richtext-editor').forEach(el => initializeQuill(`#${el.id}`));
+
+            const helpContent = {
+                standard: { title: 'Guidance: Standard', body: `<ul><li>Look at the expectations for students set by national or state organizing bodies (e.g., Curriculum Development Council in Hong Kong).</li><li>These are the broad learning goals for what students should know and be able to do.</li></ul>` },
+                objective: { title: 'Guidance: Objective', body: `<ul><li>Determine what you expect students to know and be able to do at the completion of your lesson or unit.</li><li>Use action verbs (e.g., 'cite', 'analyze', 'compare') that match your expectations.</li><li>Define the criteria for success.</li></ul>` },
+                focusQuestionUnit: { title: 'Guidance: Focus Question (Unit)', body: `<ul><li>Rewrite the unit objective as a student-friendly question to spark curiosity and provide a clear purpose for the entire unit.</li></ul>` },
+                summativeAssessment: { title: 'Guidance: Summative Assessment', body: `<ul><li>How will you measure student success at the end of the unit?</li><li>Examples: chapter exam, project, essay, presentation.</li><li>Ensure the assessment is aligned with the standard and objective.</li></ul>` },
+                bellRinger: { title: 'Guidance: Bell Ringer', body: `<ul><li>A 3-5 minute independent task for students at the start of class.</li><li>Can be a formative assessment of previous material or a preview of new learning to tap into prior knowledge.</li></ul>` },
+                hook: { title: 'Guidance: Hook', body: `<ul><li>The "Wow" factor to capture attention and make the lesson relevant.</li><li>Connects what students already know with the new content.</li><li>Examples: a high-interest short video clip, a personal story, a surprising statistic, a real-world problem.</li></ul>` },
+                focusQuestionLesson: { title: 'Guidance: Focus Question (Lesson)', body: `<ul><li>State the lesson's objective as a student-friendly question. Keep it visible and refer to it throughout the lesson.</li></ul>` },
+                iDo: { title: 'Guidance: I Do (Learn It)', body: `<ul><li>Teacher presents foundational material (approx. 7-15 mins).</li><li>Use "Think-Alouds" to make your thought processes visible. Break information into chunks.</li><li>Use metaphors, analogies, and examples/non-examples.</li><li>Provide a method for student notetaking (e.g., skeleton notes, graphic organizers).</li></ul>` },
+                weDo: { title: 'Guidance: We Do (Learn It)', body: `<ul><li>Guided practice and retrieval practice (formative assessment). Students practice under your watchful eye with real-time feedback.</li><li>Ideas: Think-pair-share, one-sentence summary, cold call, recall, pomodoro, working on whiteboards, completing a graphic organizer.</li></ul>` },
+                youDo: { title: 'Guidance: You Do (Link It)', body: `<ul><li>Students demonstrate their understanding of the material independently. This is where all students, including "hikers," solidify their learning.</li><li>Incorporate spaced repetition and interleaving by including problems from previous lessons.</li></ul>` },
+                extendIt: { title: 'Guidance: Extend It (Link It)', body: `<ul><li>"Race car" students extend their new knowledge and skills to new situations. This provides enrichment and challenge for students who have mastered the core concept.</li><li>Examples: completing a WebQuest, preparing for a debate, solving a real-world problem.</li></ul>` },
+                potentialProblems: { title: 'Guidance: Potential Problems', body: `<ul><li>Anticipate what might go wrong during the lesson.</li><li>Consider potential student misunderstandings, behavioral issues, or technology failures.</li><li>Plan how you will proactively address or react to these issues.</li></ul>` },
+                closure: { title: 'Guidance: Closure', body: `<ul><li>Students summarize what they have learned. Call on multiple students to build a comprehensive summary.</li><li>Can be an "Exit Ticket" where students individually answer the focus question.</li><li>Check answers to address any misinformation before students leave.</li></ul>` },
+                reflectiveNotesTeacher: { title: 'Guidance: Reflective Notes', body: `<ul><li>Jot down notes to guide revisions.</li><li>What went well? What could be clearer?</li><li>How can you better support "hikers" and challenge "racecars"?</li></ul>` }
+            };
+
+            const helpModal = document.getElementById('helpModal');
+            const checklistModal = document.getElementById('checklistModal');
+            
+            const setupModal = (modalId, openBtnId) => {
+                const modal = document.getElementById(modalId);
+                const openBtn = document.getElementById(openBtnId);
+                const closeBtn = modal.querySelector('.close-button');
+
+                if(openBtn) openBtn.onclick = () => modal.style.display = 'flex';
+                if(closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+            };
+            
+            setupModal('checklistModal', 'showChecklistBtn');
+            setupModal('helpModal', null);
+
+            document.addEventListener('click', function(e) {
+                if(e.target.classList.contains('help-icon')) {
+                    const helpKey = e.target.dataset.help;
+                    if (helpContent[helpKey]) {
+                        helpModal.querySelector('#modalTitle').textContent = helpContent[helpKey].title;
+                        helpModal.querySelector('#modalBody').innerHTML = helpContent[helpKey].body;
+                        helpModal.style.display = 'flex';
+                    }
+                }
+                if(e.target.closest('.card-header')) {
+                    e.target.closest('.card-header').classList.toggle('collapsed');
+                }
+            });
+
+            window.onclick = (event) => {
+                if (event.target.classList.contains('modal')) {
+                    event.target.style.display = 'none';
+                }
+            };
+            
+            const segmentsContainer = document.getElementById('lesson-segments-container');
+            
+            const updateTotalTime = () => {
+                let total = 0;
+                segmentsContainer.querySelectorAll('.segment-time').forEach(input => {
+                    total += Number(input.value) || 0;
+                });
+                document.getElementById('total-time-container').textContent = `Total Lesson Body Time: ${total} mins`;
+            };
+
+            const updateSegmentHeader = (segment) => {
+                const select = segment.querySelector('.segment-type');
+                const typeText = select.options[select.selectedIndex].text;
+                const time = segment.querySelector('.segment-time').value || '0';
+                const title = segment.querySelector('.segment-title').value || 'Untitled Segment';
+                segment.querySelector('.segment-summary').textContent = `${title} [${typeText}] (${time} mins)`;
+            };
+
+            const addLessonSegment = (type = 'iDo', title = '', content = '', time = '', collapsed = true) => {
+                const segmentId = `segment-${Date.now()}${Math.random()}`;
+                const segment = document.createElement('div');
+                segment.className = 'lesson-segment';
+                segment.id = segmentId;
+                segment.draggable = true;
+
+                segment.innerHTML = `
+                    <div class="lesson-segment-header ${collapsed ? 'collapsed' : ''}">
+                        <div class="segment-header-left">
+                           <span class="drag-handle">&#x2630;</span>
+                           <span class="segment-summary"></span>
+                        </div>
+                        <div class="segment-controls">
+                            <button type="button" class="btn btn-secondary btn-sm insert-above-btn">Insert Above</button>
+                            <button type="button" class="btn btn-danger btn-sm remove-segment-btn">Remove</button>
+                        </div>
+                    </div>
+                    <div class="segment-content">
+                        <div class="form-group">
+                            <label for="title-${segmentId}">Segment Title</label>
+                            <input type="text" id="title-${segmentId}" class="segment-title" placeholder="e.g., Introduction to Photosynthesis" value="${title}">
+                        </div>
+                        <div class="form-group">
+                            <label for="type-${segmentId}">Segment Type</label>
+                            <select id="type-${segmentId}" class="segment-type">
+                                <option value="iDo">I Do (Learn It)</option>
+                                <option value="weDo">We Do (Learn It)</option>
+                                <option value="youDo">You Do (Link It)</option>
+                                <option value="extendIt">Extend It (Link It)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div class="label-with-help">
+                                <label for="content-${segmentId}">Content / Activity</label>
+                                <span class="help-icon" data-help="${type}">?</span>
+                            </div>
+                            <div id="content-${segmentId}" class="richtext-editor"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="time-${segmentId}">Time (mins)</label>
+                            <input type="number" id="time-${segmentId}" class="segment-time" min="0" placeholder="mins" value="${time}">
+                        </div>
+                    </div>
+                `;
+                
+                const select = segment.querySelector('.segment-type');
+                select.value = type;
+                
+                const editorDiv = segment.querySelector('.richtext-editor');
+                const quill = new Quill(editorDiv, {
+                    modules: { toolbar: quillToolbarOptions },
+                    theme: 'snow'
+                });
+                setEditorContent(quill, content);
+                quillInstances[editorDiv.id] = quill;
+
+                updateSegmentHeader(segment);
+                
+                segment.querySelector('.segment-title').addEventListener('input', () => updateSegmentHeader(segment));
+                segment.querySelector('.segment-type').addEventListener('change', () => {
+                    segment.querySelector('.help-icon').dataset.help = select.value;
+                    updateSegmentHeader(segment);
+                });
+                segment.querySelector('.segment-time').addEventListener('input', () => {
+                    updateSegmentHeader(segment);
+                    updateTotalTime();
+                });
+
+                return segment;
+            };
+
+            document.getElementById('add-segment-btn').addEventListener('click', () => {
+                const newSegment = addLessonSegment('iDo', '', '', '', true);
+                segmentsContainer.appendChild(newSegment);
+            });
+            
+            segmentsContainer.addEventListener('click', function(e) {
+                const target = e.target;
+                const segment = target.closest('.lesson-segment');
+                if (!segment) return;
+
+                if (target.classList.contains('remove-segment-btn')) {
+                    const editorId = segment.querySelector('.richtext-editor').id;
+                    delete quillInstances[editorId];
+                    segment.remove();
+                    updateTotalTime();
+                } else if (target.classList.contains('insert-above-btn')) {
+                    const newSegment = addLessonSegment('iDo', '', '', '', false);
+                    segmentsContainer.insertBefore(newSegment, segment);
+                } else if (target.closest('.lesson-segment-header') && !target.closest('.segment-controls')) {
+                    target.closest('.lesson-segment-header').classList.toggle('collapsed');
+                }
+            });
+
+            let draggedItem = null;
+            segmentsContainer.addEventListener('dragstart', e => {
+                if(e.target.classList.contains('lesson-segment')) {
+                    draggedItem = e.target;
+                    setTimeout(() => e.target.classList.add('dragging'), 0);
+                }
+            });
+            segmentsContainer.addEventListener('dragend', () => {
+                if(draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                }
+            });
+            segmentsContainer.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(segmentsContainer, e.clientY);
+                if (draggedItem) {
+                    if (afterElement == null) {
+                        segmentsContainer.appendChild(draggedItem);
+                    } else {
+                        segmentsContainer.insertBefore(draggedItem, afterElement);
+                    }
+                }
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.lesson-segment:not(.dragging)')];
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            const getBasicInfo = () => ({
+                teacherName: document.getElementById('teacherName').value.trim(),
+                courseName: document.getElementById('courseName').value.trim(),
+                unitName: document.getElementById('unitName').value.trim(),
+                lessonName: document.getElementById('lessonName').value.trim(),
+                lessonDate: document.getElementById('lessonDate').value
+            });
+            
+            const getTimestamp = () => new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+            const sanitize = (str) => str.replace(/[\/\\?%*:|"<>]/g, '-');
+            const getFileNameComponent = (value, defaultName) => sanitize(value || defaultName);
+
+            const generateFileName = (type) => {
+                const info = getBasicInfo();
+                const parts = [
+                    type,
+                    getFileNameComponent(info.courseName, 'course'),
+                    getFileNameComponent(info.unitName, 'unit'),
+                    getFileNameComponent(info.lessonName, 'lesson'),
+                    getFileNameComponent(info.teacherName, 'teacher_name'),
+                    getTimestamp()
+                ];
+                return parts.join('_') + '.xlsx';
+            };
+            
+            const toggleAll = (selector, collapse) => {
+                document.querySelectorAll(selector).forEach(header => {
+                    if (collapse) header.classList.add('collapsed');
+                    else header.classList.remove('collapsed');
+                });
+            };
+
+            document.getElementById('collapseAllParts').addEventListener('click', () => toggleAll('.card-header', true));
+            document.getElementById('expandAllParts').addEventListener('click', () => toggleAll('.card-header', false));
+            document.getElementById('collapseAllSegments').addEventListener('click', () => toggleAll('.lesson-segment-header', true));
+            document.getElementById('expandAllSegments').addEventListener('click', () => toggleAll('.lesson-segment-header', false));
+
+            const getEditorContent = (id) => quillInstances[id]?.getContents();
+            const setEditorContent = (quill, delta) => {
+                if (quill && delta) {
+                    quill.setContents(delta, 'silent');
+                }
+            };
+            
+            const saveDataToExcel = (dataObject, fileName) => {
+                const jsonString = JSON.stringify(dataObject);
+                const CHUNK_SIZE = 32000;
+                const dataForExcel = [];
+
+                for (let i = 0; i < jsonString.length; i += CHUNK_SIZE) {
+                    dataForExcel.push([jsonString.substring(i, i + CHUNK_SIZE)]);
+                }
+                
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(dataForExcel);
+                XLSX.utils.book_append_sheet(wb, ws, "LessonPlanData");
+                XLSX.writeFile(wb, fileName);
+            };
+            
+            const createSaveDataObject = (type) => {
+                const data = { type, basicInfo: getBasicInfo() };
+                if (type === 'full' || type === 'unit') {
+                    data.unitPlan = {
+                        standard: getEditorContent('standard'),
+                        objective: getEditorContent('objective'),
+                        focusQuestionUnit: getEditorContent('focusQuestionUnit'),
+                        summativeAssessment: getEditorContent('summativeAssessment'),
+                    };
+                }
+                if (type === 'full' || type === 'lesson') {
+                    data.lessonPlan = {
+                        bellRinger: getEditorContent('bellRinger'),
+                        hook: getEditorContent('hook'),
+                        focusQuestionLesson: getEditorContent('focusQuestionLesson'),
+                        potentialProblems: getEditorContent('potentialProblems'),
+                        closure: getEditorContent('closure'),
+                        reflectiveNotesTeacher: getEditorContent('reflectiveNotesTeacher'),
+                        followUpActions: getEditorContent('followUpActions'),
+                    };
+                    data.segments = [];
+                    document.querySelectorAll('.lesson-segment').forEach(segment => {
+                        const editorId = segment.querySelector('.richtext-editor').id;
+                        data.segments.push({
+                            title: segment.querySelector('.segment-title').value,
+                            type: segment.querySelector('.segment-type').value,
+                            content: getEditorContent(editorId),
+                            time: segment.querySelector('.segment-time').value
+                        });
+                    });
+                }
+                return data;
+            };
+
+            document.getElementById('saveFullPlan').addEventListener('click', () => {
+                const planData = createSaveDataObject('full');
+                saveDataToExcel(planData, generateFileName('FullPlan'));
+            });
+
+            document.getElementById('saveUnitPlan').addEventListener('click', () => {
+                const planData = createSaveDataObject('unit');
+                saveDataToExcel(planData, generateFileName('UnitPlan'));
+            });
+
+            document.getElementById('saveLessonPlan').addEventListener('click', () => {
+                const planData = createSaveDataObject('lesson');
+                saveDataToExcel(planData, generateFileName('LessonPlan'));
+            });
+            
+            const handleFileLoad = (file) => {
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    let jsonString = "";
+                    sheetData.forEach(row => {
+                        jsonString += row[0];
+                    });
+                    
+                    try {
+                        const planData = JSON.parse(jsonString);
+
+                        if (planData.basicInfo) {
+                            Object.keys(planData.basicInfo).forEach(key => {
+                                const element = document.getElementById(key);
+                                if (element) element.value = planData.basicInfo[key] || '';
+                            });
+                        }
+
+                        if (planData.unitPlan) {
+                            Object.keys(planData.unitPlan).forEach(key => {
+                                setEditorContent(quillInstances[key], planData.unitPlan[key]);
+                            });
+                        }
+
+                        if (planData.lessonPlan) {
+                            Object.keys(planData.lessonPlan).forEach(key => {
+                                setEditorContent(quillInstances[key], planData.lessonPlan[key]);
+                            });
+                        }
+                        
+                        if (planData.segments) {
+                            segmentsContainer.innerHTML = '';
+                            const oldSegmentKeys = Object.keys(quillInstances).filter(k => k.startsWith('content-segment'));
+                            oldSegmentKeys.forEach(k => delete quillInstances[k]);
+                            
+                            planData.segments.forEach(seg => {
+                                const newSegment = addLessonSegment(seg.type, seg.title, seg.content, seg.time, true);
+                                segmentsContainer.appendChild(newSegment);
+                            });
+                            updateTotalTime();
+                        }
+
+                    } catch (err) {
+                        alert("Could not load the lesson plan. The file may be invalid or corrupted.");
+                        console.error("Error parsing lesson plan file:", err);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            };
+
+            document.getElementById('loadFullPlanInput').addEventListener('change', (e) => { handleFileLoad(e.target.files[0]); e.target.value = ''; });
+            document.getElementById('loadUnitPlanInput').addEventListener('change', (e) => { handleFileLoad(e.target.files[0]); e.target.value = ''; });
+            document.getElementById('loadLessonPlanInput').addEventListener('change', (e) => { handleFileLoad(e.target.files[0]); e.target.value = ''; });
+
+            document.getElementById('previewPlan').addEventListener('click', () => {
+                const previewContainer = document.getElementById('lesson-plan-preview');
+                const info = getBasicInfo();
+
+                const createSection = (title, content) => {
+                    if (!content || content.ops.every(op => typeof op.insert === 'string' && op.insert.trim() === '')) return '';
+                    const tempQuill = new Quill(document.createElement('div'));
+                    tempQuill.setContents(content);
+                    return `<h3>${title}</h3><div class="preview-content">${tempQuill.root.innerHTML}</div>`;
+                };
+                
+                let html = `<h2>${info.courseName || 'Course'}: ${info.unitName || 'Unit'} - ${info.lessonName || 'Lesson'}</h2>`;
+                html += `<p><strong>Teacher:</strong> ${info.teacherName || 'N/A'} | <strong>Date:</strong> ${info.lessonDate || 'N/A'}</p>`;
+                
+                html += `<h2>Part 1: Begin with the End in Mind (Unit Plan)</h2>`;
+                html += createSection('Standard', getEditorContent('standard'));
+                html += createSection('Objective', getEditorContent('objective'));
+                html += createSection('Focus Question', getEditorContent('focusQuestionUnit'));
+                html += createSection('Summative Assessment', getEditorContent('summativeAssessment'));
+                
+                html += `<h2>Part 2: The Main Body of the Lesson</h2>`;
+                html += createSection('Bell Ringer', getEditorContent('bellRinger'));
+                html += createSection('Hook', getEditorContent('hook'));
+                html += createSection('Focus Question', getEditorContent('focusQuestionLesson'));
+
+                html += `<h3>Lesson Body Segments</h3>`;
+                let totalTime = 0;
+                document.querySelectorAll('.lesson-segment').forEach((segment) => {
+                    const typeSelect = segment.querySelector('.segment-type');
+                    const typeText = typeSelect.options[typeSelect.selectedIndex].text;
+                    const title = segment.querySelector('.segment-title').value;
+                    const editorId = segment.querySelector('.richtext-editor').id;
+                    const content = getEditorContent(editorId);
+                    const time = Number(segment.querySelector('.segment-time').value) || 0;
+                    totalTime += time;
+                    const tempQuill = new Quill(document.createElement('div'));
+                    tempQuill.setContents(content);
+                    if(tempQuill.getLength() > 1 || title) html += `<h4>${title || 'Untitled Segment'} [${typeText}] (${time} mins)</h4><div class="preview-content">${tempQuill.root.innerHTML}</div>`;
+                });
+                html += `<h3>Total Lesson Body Time: ${totalTime} mins</h3>`;
+                
+                html += `<h2>Part 3: Wrap Up</h2>`;
+                html += createSection('Potential Problems', getEditorContent('potentialProblems'));
+                html += createSection('Closure', getEditorContent('closure'));
+                html += `<h3>Reflective Notes</h3>`;
+                html += createSection('Reflections', getEditorContent('reflectiveNotesTeacher'));
+                html += createSection('Follow-up Actions / Revisions', getEditorContent('followUpActions'));
+
+                previewContainer.innerHTML = html;
+            });
+
+            document.getElementById('downloadPDF').addEventListener('click', () => {
+                document.getElementById('previewPlan').click();
+                const printContent = document.getElementById('lesson-plan-preview').innerHTML;
+                const printArea = document.getElementById('print-area');
+                printArea.innerHTML = printContent;
+                
+                const quillCss = document.createElement('link');
+                quillCss.rel = 'stylesheet';
+                quillCss.href = 'https://cdn.quilljs.com/1.3.6/quill.snow.css';
+                printArea.prepend(quillCss);
+
+                quillCss.onload = () => {
+                    window.print();
+                };
+            });
+            
+            window.onafterprint = () => {
+                const printArea = document.getElementById('print-area');
+                printArea.innerHTML = '';
+            };
+
+            document.getElementById('lessonDate').valueAsDate = new Date();
+            addLessonSegment('iDo', 'Introduction', '', '10', true);
+            toggleAll('.card-header', true);
+        });
+    </script>
+</body>
+</html>
